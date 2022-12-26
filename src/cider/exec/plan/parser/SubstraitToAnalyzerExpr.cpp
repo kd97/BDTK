@@ -1098,36 +1098,18 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       Datum v;
       v.intval = parseDateInDays(s_cast_expr.input().literal().fixed_char());
       return std::make_shared<Analyzer::Constant>(sqlTypeInfo, false, v);
-    } else if (isColumnVar(s_cast_expr.input().selection())) {
-      int col_id =
-          s_cast_expr.input().selection().direct_reference().struct_field().field();
-      if (expr_map_ptr != nullptr) {
-        auto iter = expr_map_ptr->find(col_id);
-        if (iter != expr_map_ptr->end()) {
-          auto type = iter->second->get_type_info().get_type();
-          if (type == SQLTypes::kTEXT || type == SQLTypes::kVARCHAR) {
-            std::vector<std::shared_ptr<Analyzer::Expr>> args;
-            args.push_back(toAnalyzerExpr(
-                s_cast_expr.input().selection(), function_map, expr_map_ptr));
-
-            return makeExpr<Analyzer::TryStringCastOper>(SQLTypes::kDATE, args);
-          } else if (sqlTypeInfo.is_time()) {
-            return std::make_shared<Analyzer::UOper>(
-                sqlTypeInfo,
-                false,
-                SQLOps::kCAST,
-                toAnalyzerExpr(s_cast_expr.input(), function_map, expr_map_ptr));
-          } else {
-            CIDER_THROW(CiderCompileException,
-                        "Not supported date cast type other than string.");
-          }
-        } else {
-          CIDER_THROW(CiderCompileException, "Failed to get field reference expr.");
-        }
-      }
-      CIDER_THROW(CiderCompileException, "Can not get the origin type of CAST to DATE.");
     }
   }
+  auto type = getSQLTypeInfo(s_cast_expr.type()).get_type();
+
+  if (type == SQLTypes::kTEXT || type == SQLTypes::kVARCHAR) {
+    std::vector<std::shared_ptr<Analyzer::Expr>> args;
+    args.push_back(
+        toAnalyzerExpr(s_cast_expr.input(), function_map, expr_map_ptr));
+    return makeExpr<Analyzer::TryStringCastOper>(getSQLTypeInfo(s_cast_expr.type()),
+                                                 args);
+  }
+
   // CAST is a normal UOper expr in Analyzer
   return std::make_shared<Analyzer::UOper>(
       getSQLTypeInfo(s_cast_expr.type()),

@@ -20,6 +20,7 @@
  */
 
 #include "exec/nextgen/context/StringHeap.h"
+#include "util/misc.h"
 
 ALWAYS_INLINE uint64_t pack_string(const int8_t* ptr, const int32_t len) {
   return (reinterpret_cast<const uint64_t>(ptr) & 0xffffffffffff) |
@@ -154,3 +155,80 @@ extern "C" RUNTIME_EXPORT int64_t cider_ascii_upper(int8_t* string_heap_ptr,
 extern "C" void test_to_string(int value) {
   std::printf("test_to_string: %s\n", std::to_string(value).c_str());
 }
+
+#define DEF_CONVERT_NUMERIC_TO_STRING(value_type, value_name)                         \
+  extern "C" RUNTIME_EXPORT NEVER_INLINE int64_t gen_string_from_##value_name(        \
+      const value_type operand, char* string_heap_ptr) {                              \
+    std::string_view str =                                                            \
+        fmt::format("{:#}", operand); /* keep trailing zero for floating point type*/ \
+    StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);                 \
+    string_t s = ptr->addString(str.data(), str.length());                            \
+    return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize()); \
+  }
+DEF_CONVERT_NUMERIC_TO_STRING(int8_t, tinyint)
+DEF_CONVERT_NUMERIC_TO_STRING(int16_t, smallint)
+DEF_CONVERT_NUMERIC_TO_STRING(int32_t, int)
+DEF_CONVERT_NUMERIC_TO_STRING(int64_t, bigint)
+DEF_CONVERT_NUMERIC_TO_STRING(float, float)
+DEF_CONVERT_NUMERIC_TO_STRING(double, double)
+#undef DEF_CONVERT_NUMERIC_TO_STRING
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+gen_string_from_bool(const int8_t operand, char* string_heap_ptr) {
+  std::string_view str = (operand == 1) ? "true" : "false";
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(str.data(), str.length());
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+gen_string_from_time(const int64_t operand, char* string_heap_ptr) {
+  constexpr size_t buf_size = 64;
+  char buf[buf_size];
+  int32_t str_len = shared::formatHMS(buf, buf_size, operand);
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(buf, str_len);
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+gen_string_from_timestamp(const int64_t operand,
+                          char* string_heap_ptr,
+                          const int32_t dimension) {
+  constexpr size_t buf_size = 64;
+  char buf[buf_size];
+  int32_t str_len = shared::formatDateTime(buf, buf_size, operand, dimension);
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(buf, str_len);
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+extern "C" RUNTIME_EXPORT ALWAYS_INLINE int64_t
+gen_string_from_date(const int32_t operand, char* string_heap_ptr) {
+  constexpr size_t buf_size = 64;
+  char buf[buf_size];
+  int32_t str_len = shared::formatDays(buf, buf_size, operand);
+  StringHeap* ptr = reinterpret_cast<StringHeap*>(string_heap_ptr);
+  string_t s = ptr->addString(buf, str_len);
+  return pack_string((const int8_t*)s.getDataUnsafe(), (const int32_t)s.getSize());
+}
+
+#define DEF_CONVERT_STRING_TO_NUMERIC(value_type, value_name)                        \
+  extern "C" RUNTIME_EXPORT ALWAYS_INLINE value_type convert_string_to_##value_name( \
+      const char* str_ptr, const int32_t str_len) {                                  \
+    std::string from_str(str_ptr, str_len);                                          \
+    try {                                                                            \
+      value_type numeric_val = boost::lexical_cast<value_type>(from_str);            \
+      return numeric_val;                                                            \
+    } catch (boost::bad_lexical_cast&) {                                             \
+    }                                                                                \
+  }
+
+DEF_CONVERT_STRING_TO_NUMERIC(short, bool)
+
+DEF_CONVERT_STRING_TO_NUMERIC(int, int)
+
+DEF_CONVERT_STRING_TO_NUMERIC(float, float)
+DEF_CONVERT_STRING_TO_NUMERIC(double, double)
+
+#undef DEF_CONVERT_STRING_TO_NUMERIC
