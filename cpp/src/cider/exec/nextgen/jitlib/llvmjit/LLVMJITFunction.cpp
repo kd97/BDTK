@@ -58,11 +58,12 @@ llvm::LLVMContext& LLVMJITFunction::getLLVMContext() {
 void LLVMJITFunction::finish() {
   std::stringstream error_msg;
   llvm::raw_os_ostream error_os(error_msg);
-  if (llvm::verifyFunction(func_, &error_os)) {
+  llvm::verifyFunction(func_, &error_os);
+  {
     error_os << "\n-----\n";
     func_.print(error_os);
     error_os << "\n-----\n";
-    LOG(ERROR) << error_msg.str();
+    LOG(INFO) << error_msg.str();
   }
 }
 

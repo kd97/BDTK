@@ -46,10 +46,10 @@ void BinOper::initAutoVectorizeFlag() {
 }
 
 int32_t getBinOpRescaledFactor(const SQLOps ops,
-                               const int32_t self_scale,
-                               const int32_t other_scale,
-                               const int32_t res_scale,
-                               const bool first_operand) {
+                             const int32_t self_scale,
+                             const int32_t other_scale,
+                             const int32_t res_scale,
+                             const bool first_operand) {
   switch (ops) {
     case kPLUS:
     case kMINUS:
@@ -147,20 +147,20 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
             : getRescaledValue(context,
                                lhs_expr_val,
                                getBinOpRescaledFactor(optype,
-                                                      lhs_ti.get_scale(),
-                                                      rhs_ti.get_scale(),
-                                                      get_type_info().get_scale(),
-                                                      true));
+                                                    lhs_ti.get_scale(),
+                                                    rhs_ti.get_scale(),
+                                                    get_type_info().get_scale(),
+                                                    true));
     auto rhs_jit_val =
         !rhs_ti.is_decimal()
             ? rhs_expr_val.getValue()
             : getRescaledValue(context,
                                rhs_expr_val,
                                getBinOpRescaledFactor(optype,
-                                                      rhs_ti.get_scale(),
-                                                      lhs_ti.get_scale(),
-                                                      get_type_info().get_scale(),
-                                                      false));
+                                                    rhs_ti.get_scale(),
+                                                    lhs_ti.get_scale(),
+                                                    get_type_info().get_scale(),
+                                                    false));
     if (IS_ARITHMETIC(optype)) {
       auto null = lhs_expr_val.getNull() || rhs_expr_val.getNull();
       return codegenFixedSizeColArithFun(context, null, lhs_jit_val, rhs_jit_val);

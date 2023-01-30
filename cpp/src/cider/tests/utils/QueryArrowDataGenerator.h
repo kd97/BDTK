@@ -135,8 +135,8 @@ class QueryArrowDataGenerator {
                                    const std::vector<::substrait::Type>& types,
                                    std::vector<int32_t> null_chance = {},
                                    GeneratePattern pattern = GeneratePattern::Sequence,
-                                   const int64_t value_min = 0,
-                                   const int64_t value_max = -1) {
+                                   const __int128_t value_min = 0,
+                                   const __int128_t value_max = -1) {
     if (null_chance.empty()) {
       null_chance = std::vector<int32_t>(types.size(), 0);
     }
@@ -159,6 +159,8 @@ class QueryArrowDataGenerator {
           GENERATE_AND_ADD_COLUMN(float)
         case ::substrait::Type::KindCase::kFp64:
           GENERATE_AND_ADD_COLUMN(double)
+        case ::substrait::Type::KindCase::kDecimal:
+          GENERATE_AND_ADD_COLUMN(__int128_t)
         case ::substrait::Type::KindCase::kString:
         case ::substrait::Type::KindCase::kVarchar:
         case ::substrait::Type::KindCase::kFixedChar:
@@ -217,7 +219,9 @@ class QueryArrowDataGenerator {
         for (auto i = 0; i < row_num; ++i) {
           null_data[i] = Random::oneIn(null_chance, rng) ? (col_data[i] = 0, true)
                                                          : (col_data[i] = i, false);
+          std::cout << (int64_t)col_data[i] << ",";
         }
+        std::cout << std::endl;
         break;
       case GeneratePattern::Random:
         if (std::is_integral<T>::value) {
@@ -229,7 +233,9 @@ class QueryArrowDataGenerator {
                                : (col_data[i] = static_cast<T>(
                                       Random::randInt64(value_min, value_max, rng)),
                                   false);
+            std::cout << (int64_t)col_data[i] << ",";
           }
+          std::cout << std::endl;
         } else if (std::is_floating_point<T>::value) {
           for (auto i = 0; i < col_data.size(); ++i) {
             null_data[i] = Random::oneIn(null_chance, rng)

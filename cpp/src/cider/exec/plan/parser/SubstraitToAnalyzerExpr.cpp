@@ -494,7 +494,7 @@ std::shared_ptr<Analyzer::Expr> Substrait2AnalyzerExprConverter::toAnalyzerExpr(
       int64_t* decimalValue = reinterpret_cast<int64_t*>(byteArray);
       // ptr[0] stores lower 64 bits decimal value
       // TODO: support 128 bits decimal (ptr[1] stores higher 64 bits decimal value)
-      constant_value.bigintval = decimalValue[0];
+      constant_value.hugeintval = decimalValue[0];
       return std::make_shared<Analyzer::Constant>(
           getSQLTypeInfo(s_literal_expr), false, constant_value);
     }

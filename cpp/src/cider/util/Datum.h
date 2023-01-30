@@ -49,6 +49,7 @@ union Datum {
   int16_t smallintval;
   int32_t intval;
   int64_t bigintval;
+  __int128_t hugeintval;
   float floatval;
   double doubleval;
   VarlenDatum* arrayval;

@@ -37,7 +37,7 @@ JITExprValue& Constant::codegen(CodegenContext& context) {
   }
 
   const auto& ti = get_type_info();
-  const auto type = ti.is_decimal() ? decimal_to_int_type(ti) : ti.get_type();
+  const auto type = ti.get_type();
   switch (type) {
     case kNULLT:
       CIDER_THROW(CiderCompileException,
@@ -64,6 +64,8 @@ JITExprValue& Constant::codegen(CodegenContext& context) {
     case kINTERVAL_YEAR_MONTH:
       return set_expr_value(
           null, func.createLiteral(getJITTag(type), get_constval().bigintval));
+    case kDECIMAL:
+      return set_expr_value(null, func.createLiteral(getJITTag(type), get_constval().hugeintval));
     case kFLOAT:
       return set_expr_value(null,
                             func.createLiteral(getJITTag(type), get_constval().floatval));

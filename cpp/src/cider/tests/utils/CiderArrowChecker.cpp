@@ -373,7 +373,10 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
               << ". Actual: " << actual_array->length;
     return false;
   }
-
+  // BDTk <= DuckDb schema (Noe)
+  // int,bigint,(decimal) <= decimal
+  // float,double,(decimal) <= double
+  // sum(a/b)
   switch (expect_schema->format[0]) {
     case 'b':
       return checkArrowBuffer<bool>(expect_array, actual_array);
@@ -393,13 +396,17 @@ bool checkOneScalarArrowEqual(const struct ArrowArray* expect_array,
       return checkArrowBufferFp<float>(expect_array, actual_array);
     case 'g':
       return checkArrowBufferFp<double>(expect_array, actual_array);
-    case 'd': {
-      // duck db schema makes all sum(int) type as decimal
-      // which does not keep consistency with our schema
-      // so add new processing branch
-      return checkArrowBufferDecimal(
-          expect_array, actual_array, actual_schema->format[0]);
-    }
+    case 'd':
+      // workaround for non-groupby agg test
+      {
+        for (int i = 0; i < expect_array->length; i++) {
+          auto expect_value_buffer = reinterpret_cast<const __int128_t*>(expect_array->buffers[1]);
+          auto actual_value_buffer = reinterpret_cast<const __int128_t*>(actual_array->buffers[1]);
+
+          std::cout << (int64_t)expect_value_buffer[i] << "," << (int64_t)actual_value_buffer[i] << std::endl;
+        }
+        return checkArrowBuffer<__int128_t>(expect_array, actual_array);
+      }
     case 't': {
       if (expect_schema->format[1] == 'd' && expect_schema->format[2] == 'D') {
         return checkArrowBuffer<int32_t>(expect_array, actual_array);

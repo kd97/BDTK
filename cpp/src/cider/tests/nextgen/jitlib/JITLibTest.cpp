@@ -782,6 +782,27 @@ TEST_F(JITLibTests, DecimalMathOpTest) {
       a, b, __int128_t(1), [](JITValue& a, JITValue& b) { return b / 2 - a + 1; });
 }
 
+TEST_F(JITLibTests, DecimalOverflowTest) {
+  auto module = cider::jitlib::LLVMJITModule("test", true);
+  cider::jitlib::JITFunctionPointer function =
+      cider::jitlib::JITFunctionBuilder()
+          .registerModule(module)
+          .setFuncName("query_func")
+          .addReturn(cider::jitlib::JITTypeTag::INT32)
+          .addProcedureBuilder([](cider::jitlib::JITFunctionPointer func) {
+            JITValuePointer param1 =
+                func->createVariable(JITTypeTag::INT128, "param1", 10000000);
+            JITValuePointer param2 = func->createLiteral(JITTypeTag::INT128, 1);
+            param1->mulWithErrorCheck(param2);
+            func->createReturn(func->createLiteral(JITTypeTag::INT32, 1));
+          })
+          .build();
+  module.finish();
+
+  auto query_func = function->getFunctionPointer<int32_t>();
+  int32_t res = query_func();
+  std::cout << res << std::endl;
+}
 TEST_F(JITLibTests, DecimalCmpOpTest) {
   int64_t a_dec_arr[2] = {1, 1};
   int64_t b_dec_arr[2] = {2, 2};
@@ -800,5 +821,6 @@ TEST_F(JITLibTests, DecimalCmpOpTest) {
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+  testing::GTEST_FLAG(filter) = ("JITLibTests.DecimalMathOpTest");
   return RUN_ALL_TESTS();
 }

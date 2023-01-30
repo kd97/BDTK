@@ -39,6 +39,9 @@
 #define CREATE_SUBSTRAIT_LIST_TYPE(name) \
   TypeUtils::createListType(substrait::Type::KindCase::k##name)
 
+#define CREATE_SUBSTRAIT_DECIMAL_TYPE(precision, scale) \
+  TypeUtils::createDecimalType(precision, scale)
+
 // Internal use this macro
 #define GENERATE_SUBSTRAIT_TYPE(type_name, type_func, nullalbility) \
   {                                                                 \
@@ -63,6 +66,21 @@ class TypeUtils {
                                           bool nullable) {
     auto s_type = new ::substrait::Type();
     s_type->CopyFrom(createType(typeKind, nullable));
+    return s_type;
+  }
+
+  static ::substrait::Type createDecimalType(const int32_t precision = 0,
+                                             const int32_t scale = 0,
+                                             const bool nullable = false) {
+    ::substrait::Type s_type;
+    substrait::Type_Nullability nullalbility =
+        nullable ? substrait::Type::NULLABILITY_NULLABLE
+                 : substrait::Type::NULLABILITY_REQUIRED;
+    auto s_decimal = new substrait::Type_Decimal();
+    s_decimal->set_nullability(nullalbility);
+    s_decimal->set_precision(precision);
+    s_decimal->set_scale(scale);
+    s_type.set_allocated_decimal(s_decimal);
     return s_type;
   }
 
@@ -99,8 +117,6 @@ class TypeUtils {
         GENERATE_SUBSTRAIT_TYPE(VarChar, varchar, nullalbility)
       case ::substrait::Type::KindCase::kFixedChar:
         GENERATE_SUBSTRAIT_TYPE(FixedChar, fixed_char, nullalbility)
-      case ::substrait::Type::KindCase::kDecimal:
-        GENERATE_SUBSTRAIT_TYPE(Decimal, decimal, nullalbility)
       default:
         CIDER_THROW(CiderCompileException,
                     fmt::format("not supported type: {}", typeKind));

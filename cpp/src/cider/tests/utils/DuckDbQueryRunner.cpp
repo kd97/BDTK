@@ -116,6 +116,21 @@ template <>
   return ::duckdb::Value(copy);
 }
 
+::duckdb::Value duckDecimalValueAt(const int8_t* buf,
+                                   const int64_t offset,
+                                   const int32_t width,
+                                   const int32_t scale) {
+  if (width <= ::duckdb::Decimal::MAX_WIDTH_INT64) {
+    int64_t unscaled_val = (int64_t) * (buf + sizeof(__int128_t) * offset);
+    return ::duckdb::Value::DECIMAL(unscaled_val, width, scale);
+  }
+  ::duckdb::hugeint_t unscaled_val;
+  auto * huge_int_ptr = buf + sizeof(__int128_t) * offset;
+  unscaled_val.lower = *(reinterpret_cast<const uint64_t*>(huge_int_ptr));
+  unscaled_val.upper = *(reinterpret_cast<const int64_t*>(huge_int_ptr) + 1);
+  return ::duckdb::Value::DECIMAL(unscaled_val, width, scale);
+}
+
 ::duckdb::Value duckDateValueAt(const int8_t* buf, int64_t offset) {
   int64_t epochSeconds = *(int64_t*)(buf + sizeof(int64_t) * offset);
   int32_t epochDays = epochSeconds / kSecondsInOneDay;
@@ -282,6 +297,15 @@ template <>
       case 'l': {                                                                        \
         return duckValueAt<int64_t>(static_cast<const int8_t*>(child_array->buffers[1]), \
                                     row_idx);                                            \
+      }                                                                                  \
+      case 'd': {                                                                        \
+        std::string::size_type sz;                                                       \
+        int precision = std::stoi(&child_schema->format[2], &sz);                        \
+        int scale = std::stoi(&child_schema->format[2 + sz + 1], &sz);                   \
+        return duckDecimalValueAt(static_cast<const int8_t*>(child_array->buffers[1]),   \
+                                  row_idx,                                               \
+                                  precision,                                             \
+                                  scale);                                                \
       }                                                                                  \
       case 'f': {                                                                        \
         return duckValueAt<float>(static_cast<const int8_t*>(child_array->buffers[1]),   \
