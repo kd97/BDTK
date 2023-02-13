@@ -58,13 +58,8 @@ int64_t getBufferNum(const ArrowSchema* schema);
 
 SQLTypes convertArrowTypeToCiderType(const char* format);
 
-<<<<<<< HEAD
 const char* convertCiderTypeToArrowType(const SQLTypeInfo& sql_info,
                                         std::string& format_buffer);
-=======
-const char* (convertCiderTypeToArrowTypeconst SQLTypeInfo& sql_info,
-                                        std::string& formatBuffer);
->>>>>>> fb07a298 (decimal sql framework)
 
 ArrowSchema* convertCiderTypeInfoToArrowSchema(const SQLTypeInfo& sql_info);
 

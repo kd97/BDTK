@@ -108,23 +108,23 @@ void executeBinOpTest(const std::string& create_ddl,
   }
 }
 
-// TEST_F(DecimalCompilerTest, DecimalArithmeticTest) {
-//   std::string create_ddl =
-//       "CREATE TABLE test(a DECIMAL(13,1) NOT NULL, b DECIMAL(13,2) NOT NULL);";
-//   // operand unscaled value
-//   std::vector<__int128_t> a_uv = {1, 2, 3, 4, 5};
-//   std::vector<__int128_t> b_uv = {10, 20, 30, 40, 50};
-//   // expected real value
-//   std::vector<std::string> add_rv = {"0.20", "0.40", "0.60", "0.80", "1.00"};
-//   std::vector<std::string> sub_rv = {"0.00", "0.00", "0.00", "0.00", "0.00"};
-//   std::vector<std::string> mul_rv = {"0.010", "0.040", "0.090", "0.160", "0.250"};
-//   std::vector<std::string> div_rv = {
-//       "1.00000", "1.00000", "1.00000", "1.00000", "1.00000"};
-//   executeBinOpTest(create_ddl, "select a + b from test", a_uv, b_uv, add_rv);
-//   executeBinOpTest(create_ddl, "select a - b from test", a_uv, b_uv, sub_rv);
-//   executeBinOpTest(create_ddl, "select a * b from test", a_uv, b_uv, mul_rv);
-//   executeBinOpTest(create_ddl, "select a / b from test", a_uv, b_uv, div_rv);
-// }
+TEST_F(DecimalCompilerTest, DecimalArithmeticTest) {
+  std::string create_ddl =
+      "CREATE TABLE test(a DECIMAL(13,1) NOT NULL, b DECIMAL(13,2) NOT NULL);";
+  // operand unscaled value
+  std::vector<__int128_t> a_uv = {1, 2, 3, 4, 5};
+  std::vector<__int128_t> b_uv = {10, 20, 30, 40, 50};
+  // expected real value
+  std::vector<std::string> add_rv = {"0.20", "0.40", "0.60", "0.80", "1.00"};
+  std::vector<std::string> sub_rv = {"0.00", "0.00", "0.00", "0.00", "0.00"};
+  std::vector<std::string> mul_rv = {"0.010", "0.040", "0.090", "0.160", "0.250"};
+  std::vector<std::string> div_rv = {
+      "1.00000", "1.00000", "1.00000", "1.00000", "1.00000"};
+  executeBinOpTest(create_ddl, "select a + b from test", a_uv, b_uv, add_rv);
+  executeBinOpTest(create_ddl, "select a - b from test", a_uv, b_uv, sub_rv);
+  executeBinOpTest(create_ddl, "select a * b from test", a_uv, b_uv, mul_rv);
+  executeBinOpTest(create_ddl, "select a / b from test", a_uv, b_uv, div_rv);
+}
 
 TEST_F(DecimalCompilerTest, DecimalCompareTest) {
   std::string create_ddl =
