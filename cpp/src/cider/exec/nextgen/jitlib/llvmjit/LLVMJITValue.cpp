@@ -267,12 +267,10 @@ JITValuePointer LLVMJITValue::mulWithErrorCheck(JITValue& rh) {
 
   // return error
   auto ifBuilder = parent_function_.createIfBuilder();
-  ifBuilder->condition([&overflow_value]() { return overflow_value; })
+ ifBuilder->condition([&overflow_value]() { return overflow_value; })
       ->ifTrue([this]() {
-        getFunctionBuilder(parent_function_)
-            .CreateRet(llvm::ConstantInt::get(
-                llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
-                ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
+        parent_function_.createReturn(parent_function_.createLiteral(JITTypeTag::INT32,
+                                               ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
       })
       ->build();
 
@@ -336,10 +334,8 @@ JITValuePointer LLVMJITValue::subWithErrorCheck(JITValue& rh) {
   auto ifBuilder = parent_function_.createIfBuilder();
   ifBuilder->condition([&overflow_value]() { return overflow_value; })
       ->ifTrue([this]() {
-        getFunctionBuilder(parent_function_)
-            .CreateRet(llvm::ConstantInt::get(
-                llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
-                ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
+        parent_function_.createReturn(parent_function_.createLiteral(JITTypeTag::INT32,
+                                               ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
       })
       ->build();
 
@@ -430,10 +426,8 @@ JITValuePointer LLVMJITValue::addWithErrorCheck(JITValue& rh) {
   auto ifBuilder = parent_function_.createIfBuilder();
   ifBuilder->condition([&overflow_value]() { return overflow_value; })
       ->ifTrue([this]() {
-        getFunctionBuilder(parent_function_)
-            .CreateRet(llvm::ConstantInt::get(
-                llvm::Type::getInt32Ty(parent_function_.getLLVMContext()),
-                ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
+        parent_function_.createReturn(parent_function_.createLiteral(JITTypeTag::INT32,
+                                               ERROR_CODE::ERR_OVERFLOW_OR_UNDERFLOW));
       })
       ->build();
 

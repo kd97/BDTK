@@ -37,6 +37,7 @@
   auto compile_res = ciderCompileModule_->compile(plan, compile_option, exe_option); \
   cider_runtime_module_ =                                                            \
       std::make_shared<CiderRuntimeModule>(compile_res, compile_option, exe_option); \
+  std::cout << compile_res->getIR() << std::endl;                                    \
   auto output_schema = compile_res->getOutputCiderTableSchema();
 
 std::string getSubstraitPlanFilesPath() {

@@ -80,18 +80,18 @@ int32_t getBinOpRescaledFactor(const SQLOps ops,
 JITValuePointer getRescaledValue(CodegenContext& context,
                                  FixSizeJITExprValue& expr_val,
                                  const int32_t scaled_factor) {
-  JITFunction& func = *context.getJITFunction();
-  auto operand_val = expr_val.getValue();
-  if (scaled_factor == 0)
-    return operand_val;
-  // only do upscale to keep precision
-  CHECK_GT(scaled_factor, 0);
-  JITValuePointer scaled_val =
-      func.createLiteral(operand_val->getValueTypeTag(), exp_to_scale(scaled_factor));
-  // TODO(kaidi): cast overflow check
-  JITValuePointer rescaled_val = func.createVariable(
-      operand_val->getValueTypeTag(), "rescaled_val", scaled_val * operand_val);
-  return rescaled_val;
+  // JITFunction& func = *context.getJITFunction();
+  // auto operand_val = expr_val.getValue();
+  // if (scaled_factor == 0)
+  //   return operand_val;
+  // // only do upscale to keep precision
+  // CHECK_GT(scaled_factor, 0);
+  // JITValuePointer scaled_val =
+  //     func.createLiteral(operand_val->getValueTypeTag(), exp_to_scale(scaled_factor));
+  // // TODO(kaidi): cast overflow check
+  // JITValuePointer rescaled_val = func.createVariable(
+  //     operand_val->getValueTypeTag(), "rescaled_val", scaled_val * operand_val);
+  return expr_val.getValue();
 }
 
 JITExprValue& BinOper::codegen(CodegenContext& context) {
@@ -142,25 +142,10 @@ JITExprValue& BinOper::codegen(CodegenContext& context) {
     const auto optype = get_optype();
     // rescale decimal value before integer calculation
     auto lhs_jit_val =
-        !lhs_ti.is_decimal()
-            ? lhs_expr_val.getValue()
-            : getRescaledValue(context,
-                               lhs_expr_val,
-                               getBinOpRescaledFactor(optype,
-                                                      lhs_ti.get_scale(),
-                                                      rhs_ti.get_scale(),
-                                                      get_type_info().get_scale(),
-                                                      true));
+          lhs_expr_val.getValue();
+   
     auto rhs_jit_val =
-        !rhs_ti.is_decimal()
-            ? rhs_expr_val.getValue()
-            : getRescaledValue(context,
-                               rhs_expr_val,
-                               getBinOpRescaledFactor(optype,
-                                                      rhs_ti.get_scale(),
-                                                      lhs_ti.get_scale(),
-                                                      get_type_info().get_scale(),
-                                                      false));
+          rhs_expr_val.getValue();
     if (IS_ARITHMETIC(optype)) {
       auto null = lhs_expr_val.getNull() || rhs_expr_val.getNull();
       return codegenFixedSizeColArithFun(context, null, lhs_jit_val, rhs_jit_val);
@@ -243,13 +228,10 @@ JITExprValue& BinOper::codegenFixedSizeColArithFun(CodegenContext& context,
   bool needs_error_check = context.getCodegenOptions().needs_error_check;
   JITFunction& func = *context.getJITFunction();
   if (needs_error_check) {
-    JITValuePointer res_val = func.createVariable(lhs->getValueTypeTag(), "res_val");
+    JITValuePointer res_val = func.createVariable(lhs->getValueTypeTag(), "res_val", lhs);
     // pass null value error check
-    func.createIfBuilder()
-        ->condition([&]() { return null; })
-        ->ifTrue([&]() { *res_val = *lhs; })
-        ->ifFalse([&]() { res_val = codegenArithWithErrorCheck(lhs, rhs); })
-        ->build();
+    res_val = codegenArithWithErrorCheck(lhs, rhs);
+ 
     return set_expr_value(null, res_val);
   } else {
     switch (get_optype()) {
@@ -267,7 +249,6 @@ JITExprValue& BinOper::codegenFixedSizeColArithFun(CodegenContext& context,
         UNREACHABLE();
     }
   }
-  return expr_var_;
 }
 
 JITExprValue& BinOper::codegenFixedSizeColCmpFun(JITValuePointer& null,

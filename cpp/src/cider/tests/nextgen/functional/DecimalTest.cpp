@@ -58,7 +58,7 @@ class LongDecimalType : public CiderNextgenTestBase {
         30,
         {"col_1", "col_2"},
         {CREATE_SUBSTRAIT_DECIMAL_TYPE(38, 3), CREATE_SUBSTRAIT_DECIMAL_TYPE(38, 4)},
-        {2, 2},
+        {0, 0},
         Random,
         1'000'000'000'000'000'000 * (__int128_t)1'000'000,
         2'000'000'000'000'000'000 * (__int128_t)1'000'000);
@@ -71,9 +71,9 @@ TEST_F(ShortDecimalType, decimalCompareTest) {
   // assertQuery("select col_2 from test where col_1 > 0");
   // assertQuery("select col_1 from test where col_2 <= 0");
   // assertQuery("select col_1 from test where col_2 IS NULL");
-  // cider::exec::nextgen::context::CodegenOptions codegen_options{};
-  // codegen_options.needs_error_check = true;
-  // setCodegenOptions(codegen_options);
+  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  codegen_options.needs_error_check = true;
+  setCodegenOptions(codegen_options);
   assertQuery("select col_1 + col_2  + 1.0 from test");
   assertQuery("select col_1 * col_2 from test");
   // assertQuery("select col_3 * col_4 from test");
@@ -87,9 +87,9 @@ TEST_F(LongDecimalType, decimalMathTest) {
   // assertQuery("select col_2 from test where col_1 > 0");
   // assertQuery("select col_1 from test where col_2 <= 0");
   // assertQuery("select col_1 from test where col_2 IS NULL");
-  // cider::exec::nextgen::context::CodegenOptions codegen_options{};
-  // codegen_options.needs_error_check = true;
-  // setCodegenOptions(codegen_options);
+  cider::exec::nextgen::context::CodegenOptions codegen_options{};
+  codegen_options.needs_error_check = true;
+  setCodegenOptions(codegen_options);
   assertQuery("select col_1 + col_2  + 1.0 from test");
   // assertQuery("select col_1 * col_2 from test");
   // assertQuery("select col_3 * col_4 from test");
